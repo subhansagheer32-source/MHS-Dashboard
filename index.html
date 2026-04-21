@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MHS Pro | v12.8 Enterprise</title>
+    <script src="panel.js"></script>
+    <link rel="stylesheet" href="panel fonts.css">
+    <style>
+        
+        
+        body { font-family: 'panel fonts ' 'Outfit', sans-serif; background-color: #020617; color: #e2e8f0; }
+        
+        .glass-card { 
+            background: rgba(30, 41, 59, 0.4); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            transition: all 0.2s ease;
+        }
+        
+        .glass-card:hover { transform: translateY(-3px); border-color: rgba(34, 211, 238, 0.5); }
+
+        /* RGB Dynamic Animation */
+        @keyframes rgb-sync {
+            0% { border-color: #ff0000; box-shadow: 0 0 15px rgba(255, 0, 0, 0.4); }
+            33% { border-color: #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4); }
+            66% { border-color: #0000ff; box-shadow: 0 0 15px rgba(0, 0, 255, 0.4); }
+            100% { border-color: #ff0000; box-shadow: 0 0 15px rgba(255, 0, 0, 0.4); }
+        }
+        .rgb-active { animation: rgb-sync 2s infinite linear !important; border-width: 2px !important; }
+
+        /* COMBOS */
+        .combo-sales { border: 2px solid transparent !important; background: linear-gradient(#1e293b, #1e293b) padding-box, linear-gradient(to right, #22d3ee, #10b981, #a855f7) border-box !important; }
+        .btn-sales { background: linear-gradient(to right, #22d3ee, #10b981, #a855f7) !important; color: #020617 !important; }
+        
+        .combo-fire { border: 2px solid transparent !important; background: linear-gradient(#1e293b, #1e293b) padding-box, linear-gradient(to right, #ef4444, #f97316, #eab308) border-box !important; }
+        .btn-fire { background: linear-gradient(to right, #ef4444, #f97316, #eab308) !important; color: #020617 !important; }
+
+        /* SHAKE LOGIC */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; border-color: #ef4444 !important; }
+
+        .wheel-container { position: relative; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 4px solid #1e293b; transition: all 0.5s; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="antialiased">
+
+<div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-[#020617] z-[100]">
+    <div id="login-box" class="glass-card p-10 rounded-3xl w-full max-w-md text-center border-t-4 border-cyan-400">
+        <h1 class="text-4xl font-bold text-white mb-6 italic">MHS <span class="text-cyan-400">PRO</span></h1>
+        <p id="login-err" class="text-red-500 text-[10px] font-bold uppercase mb-2 opacity-0">Incorrect PIN. Entry Denied.</p>
+        <input type="password" id="admin-pass" onkeypress="if(event.key==='Enter')checkLogin()" placeholder="SYSTEM PIN" class="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl text-white text-center outline-none mb-4 focus:border-cyan-400">
+        <button onclick="checkLogin()" class="w-full bg-cyan-400 text-slate-900 p-4 rounded-2xl font-black">LOGIN</button>
+    </div>
+</div>
+
+<div id="app-shell" class="hidden min-h-screen flex flex-col lg:flex-row">
+    <aside class="w-full lg:w-64 bg-[#010409] border-r border-slate-800 p-6 space-y-2">
+        <div class="text-2xl font-black text-white mb-8 italic">MHS <span class="text-cyan-400">PRO</span></div>
+        <nav class="space-y-1">
+            <button onclick="showPage('daily')" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 transition text-sm font-bold uppercase tracking-tighter">Dashboard</button>
+            <button onclick="showPage('bonuses')" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 transition text-sm font-bold uppercase tracking-tighter">Bonuses</button>
+            <button onclick="showPage('barber-finance')" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 transition text-sm font-bold uppercase tracking-tighter">Staff Ledger</button>
+            <button onclick="showPage('monthly')" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 transition text-sm font-bold uppercase tracking-tighter">Records</button>
+            <button onclick="showPage('settings')" class="w-full text-left p-4 rounded-xl hover:bg-slate-800 transition text-sm font-bold uppercase tracking-tighter">Settings</button>
+        </nav>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto">
+        <header class="h-20 border-b border-slate-800 flex items-center justify-between px-8 sticky top-0 bg-[#020617]/90 backdrop-blur-xl z-20">
+            <div>
+                <h2 id="page-title" class="text-lg font-bold text-white uppercase tracking-widest">Dashboard</h2>
+                <p id="active-day-label" class="text-[10px] text-cyan-400 font-bold uppercase"></p>
+            </div>
+            <button onclick="closeBusinessDay()" class="bg-red-500/10 border border-red-500 text-red-500 px-4 py-2 rounded-xl text-[9px] font-black uppercase">End Session</button>
+        </header>
+
+        <div class="p-8 space-y-8">
+            <section id="page-daily" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div class="glass-card p-4 rounded-2xl border-b-2 border-emerald-500 text-center">
+                        <p class="text-[8px] text-slate-400 font-bold uppercase">Cash</p>
+                        <h3 id="dash-cash" class="text-lg font-bold text-emerald-400">Rs 0</h3>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl border-b-2 border-cyan-400 text-center">
+                        <p class="text-[8px] text-slate-400 font-bold uppercase">Online</p>
+                        <h3 id="dash-online" class="text-lg font-bold text-cyan-400">Rs 0</h3>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl border-b-2 border-purple-500 text-center">
+                        <p class="text-[8px] text-slate-400 font-bold uppercase">Products</p>
+                        <h3 id="dash-product" class="text-lg font-bold text-purple-400">Rs 0</h3>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl border-b-2 border-red-500 text-center">
+                        <p class="text-[8px] text-slate-400 font-bold uppercase">Expenses</p>
+                        <h3 id="dash-exp" class="text-lg font-bold text-red-400">Rs 0</h3>
+                    </div>
+                    <div class="glass-card p-4 rounded-2xl combo-sales text-center">
+                        <p class="text-[8px] text-slate-400 font-bold uppercase">Total Daily</p>
+                        <h3 id="dash-total" class="text-lg font-bold text-white">Rs 0</h3>
+                    </div>
+                    <div class="glass-card p-2 rounded-2xl flex items-center justify-center" id="wheel-card-container">
+                        <div class="wheel-container" id="wheel-border">
+                            <span id="goal-percent" class="text-[10px] font-black">0%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-card p-8 rounded-3xl combo-sales">
+                        <h4 class="font-bold mb-4 text-xs uppercase text-cyan-400">Sales Entry</h4>
+                        <div id="barber-select-wrap">
+                            <select id="sale-barber" class="w-full p-4 bg-slate-900/50 rounded-xl mb-4 border border-slate-700 outline-none text-sm"></select>
+                        </div>
+                        <select id="sale-service" class="w-full p-4 bg-slate-900/50 rounded-xl mb-4 border border-slate-700 outline-none text-sm"></select>
+                        <div class="flex gap-2 mb-4">
+                            <button onclick="setMethod('Cash')" id="m-cash" class="flex-1 p-3 rounded-xl bg-cyan-400 text-slate-900 font-bold text-[10px]">CASH</button>
+                            <button onclick="setMethod('Online')" id="m-online" class="flex-1 p-3 rounded-xl bg-slate-800 text-slate-400 font-bold border border-slate-700 text-[10px]">ONLINE</button>
+                            <button onclick="setMethod('Product')" id="m-product" class="flex-1 p-3 rounded-xl bg-slate-800 text-slate-400 font-bold border border-slate-700 text-[10px]">PRODUCT</button>
+                        </div>
+                        <button onclick="addSale()" class="w-full btn-sales p-4 rounded-xl font-black uppercase text-sm">Save Entry</button>
+                    </div>
+                    <div class="glass-card p-8 rounded-3xl combo-fire">
+                        <h4 class="font-bold mb-4 text-xs text-red-400 uppercase">Expense Entry</h4>
+                        <input type="text" id="exp-desc" placeholder="Detail" class="w-full p-4 bg-slate-900/50 rounded-xl mb-4 outline-none border border-slate-700 text-sm">
+                        <input type="number" id="exp-amt" placeholder="Amount" class="w-full p-4 bg-slate-900/50 rounded-xl mb-4 outline-none border border-slate-700 text-sm">
+                        <button onclick="addExpense()" class="w-full btn-fire p-4 rounded-xl font-black uppercase text-sm">Save Expense</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="page-bonuses" class="hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                    <div class="glass-card p-6 rounded-3xl border-2 border-slate-400">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Silver (6k+)</p>
+                        <h2 class="text-xl font-bold mt-1">Rs 400</h2>
+                    </div>
+                    <div class="glass-card p-6 rounded-3xl border-2 border-amber-500">
+                        <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Gold (40k+)</p>
+                        <h2 class="text-xl font-bold mt-1">Rs 2,400 <span class="text-[10px] block font-normal opacity-60">incl. Silver</span></h2>
+                    </div>
+                    <div class="glass-card p-6 rounded-3xl border-2 border-cyan-400">
+                        <p class="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Diamond (150k+)</p>
+                        <h2 class="text-xl font-bold mt-1">Rs 7,400 <span class="text-[10px] block font-normal opacity-60">incl. All</span></h2>
+                    </div>
+                </div>
+                <div id="barber-bonus-status" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </section>
+
+            <section id="page-barber-finance" class="hidden space-y-6">
+                <div class="glass-card p-8 rounded-3xl border border-slate-800">
+                    <h4 class="font-bold mb-4 text-xs uppercase text-cyan-400">Add Staff Advance</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <select id="barber-exp-name" class="p-4 bg-slate-800 rounded-xl outline-none text-sm"></select>
+                        <input type="number" id="barber-exp-amt" placeholder="Advance Amount" class="p-4 bg-slate-800 rounded-xl outline-none text-sm">
+                        <button onclick="addBarberExpense()" class="bg-cyan-400 text-black font-bold rounded-xl text-xs uppercase">Deduct</button>
+                    </div>
+                </div>
+                <div id="barber-salary-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </section>
+
+            <section id="page-monthly" class="hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div class="glass-card p-6 rounded-3xl border-b-2 border-cyan-400 text-center">
+                        <p class="text-[8px] text-slate-400 font-bold uppercase">Total Sales</p>
+                        <h3 id="rec-total-sales" class="text-lg font-bold">0</h3>
+                    </div>
+                    <div class="glass-card p-6 rounded-3xl border-b-2 border-red-500 text-center">
+                        <p class="text-[8px] text-slate-400 font-bold uppercase">Expenses</p>
+                        <h3 id="rec-total-exp" class="text-lg font-bold text-red-400">0</h3>
+                    </div>
+                    <div class="glass-card p-6 rounded-3xl border-b-2 border-emerald-500 text-center">
+                        <p class="text-[8px] text-slate-400 font-bold uppercase">Profit</p>
+                        <h3 id="rec-total-profit" class="text-lg font-bold text-emerald-400">0</h3>
+                    </div>
+                    <div class="glass-card p-4 rounded-3xl flex flex-col items-center justify-center" id="month-wheel-card">
+                        <div class="wheel-container" id="monthly-wheel-border">
+                            <span id="monthly-goal-percent" class="text-[10px] font-black">0%</span>
+                        </div>
+                    </div>
+                    <button onclick="downloadExcelReport()" class="glass-card p-6 rounded-3xl bg-emerald-500/10 text-emerald-400 font-black text-[10px] uppercase">Excel Export</button>
+                </div>
+
+                <div class="glass-card rounded-3xl border border-slate-800">
+                    <div class="p-4 border-b border-slate-800 bg-slate-900/50">
+                        <h4 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Transaction History</h4>
+                    </div>
+                    <div id="full-history-rows" class="divide-y divide-slate-800 max-h-[500px] overflow-y-auto"></div>
+                </div>
+            </section>
+
+            <section id="page-settings" class="hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-card p-8 rounded-3xl border-t-2 border-cyan-400">
+                        <h4 class="font-bold mb-4 uppercase text-xs">Targets</h4>
+                        <input type="number" id="set-daily-target" placeholder="Daily Goal" class="w-full p-4 bg-slate-900/50 rounded-xl mb-4 text-sm">
+                        <input type="number" id="set-monthly-target" placeholder="Monthly Goal" class="w-full p-4 bg-slate-900/50 rounded-xl mb-4 text-sm">
+                        <button onclick="updateTarget()" class="w-full bg-cyan-400 text-black p-4 rounded-xl font-bold text-xs uppercase">Save</button>
+                    </div>
+                    <div class="glass-card p-8 rounded-3xl border-t-2 border-emerald-500">
+                        <h4 class="font-bold mb-4 uppercase text-xs">Services</h4>
+                        <div id="service-list" class="space-y-2 mb-4 max-h-32 overflow-y-auto"></div>
+                        <div class="flex gap-2">
+                            <input type="text" id="new-service-name" placeholder="Service" class="flex-1 p-4 bg-slate-900/50 rounded-xl text-sm">
+                            <input type="number" id="new-service-price" placeholder="Rs" class="w-24 p-4 bg-slate-900/50 rounded-xl text-sm">
+                            <button onclick="addService()" class="bg-emerald-500 text-black px-4 rounded-xl font-bold">+</button>
+                        </div>
+                    </div>
+                    <div class="glass-card p-8 rounded-3xl border-t-2 border-purple-500">
+                        <h4 class="font-bold mb-4 uppercase text-xs">Product Inventory</h4>
+                        <div id="product-list" class="space-y-2 mb-4 max-h-32 overflow-y-auto"></div>
+                        <div class="flex gap-2">
+                            <input type="text" id="new-prod-name" placeholder="Item" class="flex-1 p-4 bg-slate-900/50 rounded-xl text-sm">
+                            <input type="number" id="new-prod-price" placeholder="Price" class="w-24 p-4 bg-slate-900/50 rounded-xl text-sm">
+                            <button onclick="addProduct()" class="bg-purple-500 text-white px-4 rounded-xl font-bold">+</button>
+                        </div>
+                    </div>
+                    <div class="glass-card p-8 rounded-3xl border-t-2 border-slate-400">
+                        <h4 class="font-bold mb-4 uppercase text-xs">Barbers</h4>
+                        <div id="set-barber-list" class="grid grid-cols-2 gap-2 mb-4"></div>
+                        <div class="flex gap-2">
+                            <input type="text" id="set-b-name" placeholder="Name" class="flex-1 p-4 bg-slate-900/50 rounded-xl text-sm">
+                            <input type="number" id="set-b-sal" placeholder="Salary" class="w-28 p-4 bg-slate-900/50 rounded-xl text-sm">
+                            <button onclick="createBarber()" class="bg-slate-400 text-black px-4 rounded-xl font-bold uppercase text-[9px]">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<script>
+    let db = JSON.parse(localStorage.getItem('mhs_v12_8_ent')) || {
+        pass: "subhan3322",
+        dailyTarget: 10000, monthlyTarget: 300000,
+        currentBusinessDay: new Date().toLocaleDateString(),
+        barbers: [], services: [{name: "Haircut", price: 500}], products: [],
+        sales: [], expenses: [], barberFinances: {}
+    };
+
+    let selectedMethod = 'Cash';
+
+    // Saving data
+localStorage.setItem('salonData', JSON.stringify(yourDataArray));
+
+// Loading data (so it's there when you re-open the app)
+const savedData = JSON.parse(localStorage.getItem('salonData'));
+
+    function checkLogin() {
+        const pin = document.getElementById('admin-pass').value;
+        const box = document.getElementById('login-box');
+        const err = document.getElementById('login-err');
+        if (pin === db.pass) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-shell').classList.remove('hidden');
+            refreshUI();
+        } else {
+            box.classList.add('shake');
+            err.classList.remove('opacity-0');
+            setTimeout(() => box.classList.remove('shake'), 400);
+        }
+    }
+
+    function showPage(id) {
+        ['daily', 'bonuses', 'barber-finance', 'monthly', 'settings'].forEach(p => document.getElementById(`page-${p}`)?.classList.add('hidden'));
+        document.getElementById(`page-${id}`).classList.remove('hidden');
+        document.getElementById('page-title').innerText = id.toUpperCase();
+    }
+
+    function setMethod(m) {
+        selectedMethod = m;
+        const bWrap = document.getElementById('barber-select-wrap'), sSel = document.getElementById('sale-service');
+        ['m-cash', 'm-online', 'm-product'].forEach(id => document.getElementById(id).className = 'flex-1 p-3 rounded-xl bg-slate-800 text-slate-400 font-bold text-[10px]');
+        
+        if(m === 'Product') {
+            bWrap.classList.add('hidden');
+            document.getElementById('m-product').className = 'flex-1 p-3 rounded-xl bg-purple-500 text-white font-bold text-[10px]';
+            sSel.innerHTML = db.products.map(p => `<option value="${p.price}">${p.name} (Rs ${p.price})</option>`).join('');
+        } else {
+            bWrap.classList.remove('hidden');
+            const activeId = m === 'Cash' ? 'm-cash' : 'm-online';
+            const col = m === 'Cash' ? 'bg-cyan-400 text-slate-900' : 'bg-emerald-500 text-white';
+            document.getElementById(activeId).className = `flex-1 p-3 rounded-xl ${col} font-bold text-[10px]`;
+            sSel.innerHTML = db.services.map(s => `<option value="${s.price}">${s.name} (Rs ${s.price})</option>`).join('');
+        }
+    }
+
+    function addSale() {
+        const b = selectedMethod === 'Product' ? "RETAIL" : document.getElementById('sale-barber').value;
+        const price = parseFloat(document.getElementById('sale-service').value);
+        const sName = document.querySelector("#sale-service option:checked")?.text.split(' (')[0];
+        if(price) { 
+            db.sales.push({barber: b, service: sName, price: price, method: selectedMethod, date: db.currentBusinessDay, ts: new Date().toLocaleTimeString()}); 
+            save(); 
+        }
+    }
+
+    function addExpense() {
+        const d = document.getElementById('exp-desc').value, a = parseFloat(document.getElementById('exp-amt').value);
+        if(d && a) { db.expenses.push({desc: d, amt: a, date: db.currentBusinessDay, ts: new Date().toLocaleTimeString()}); save(); document.getElementById('exp-desc').value = ""; document.getElementById('exp-amt').value = ""; }
+    }
+
+    function createBarber() {
+        const n = document.getElementById('set-b-name').value, s = parseFloat(document.getElementById('set-b-sal').value) || 0;
+        if(n) { if(!db.barbers.includes(n)) db.barbers.push(n); if(!db.barberFinances[n]) db.barberFinances[n] = { salary: s, internalExp: [] }; save(); document.getElementById('set-b-name').value = ""; document.getElementById('set-b-sal').value = ""; }
+    }
+
+    function addBarberExpense() {
+        const name = document.getElementById('barber-exp-name').value, amt = parseFloat(document.getElementById('barber-exp-amt').value);
+        if(name && amt) { db.barberFinances[name].internalExp.push({amt, date: db.currentBusinessDay}); save(); document.getElementById('barber-exp-amt').value = ""; }
+    }
+
+    function addService() { const n = document.getElementById('new-service-name').value, p = parseFloat(document.getElementById('new-service-price').value); if(n && p) { db.services.push({name: n, price: p}); save(); } }
+    function addProduct() { const n = document.getElementById('new-prod-name').value, p = parseFloat(document.getElementById('new-prod-price').value); if(n && p) { db.products.push({name: n, price: p}); save(); } }
+    function removeBarber(n) { db.barbers = db.barbers.filter(x => x !== n); save(); }
+    function removeProduct(n) { db.products = db.products.filter(x => x.name !== n); save(); }
+    function updateTarget() { db.dailyTarget = parseFloat(document.getElementById('set-daily-target').value) || 10000; db.monthlyTarget = parseFloat(document.getElementById('set-monthly-target').value) || 300000; save(); alert("Updated."); }
+
+    function refreshUI() {
+        const daySales = db.sales.filter(s => s.date === db.currentBusinessDay);
+        const tCash = daySales.filter(s => s.method === 'Cash').reduce((a,b)=>a+b.price, 0);
+        const tOnline = daySales.filter(s => s.method === 'Online').reduce((a,b)=>a+b.price, 0);
+        const tProd = daySales.filter(s => s.method === 'Product').reduce((a,b)=>a+b.price, 0);
+        const tExp = db.expenses.filter(e => e.date === db.currentBusinessDay).reduce((a,b)=>a+b.amt, 0);
+        const tTotal = tCash + tOnline + tProd;
+
+        document.getElementById('dash-cash').innerText = `Rs ${tCash}`;
+        document.getElementById('dash-online').innerText = `Rs ${tOnline}`;
+        document.getElementById('dash-product').innerText = `Rs ${tProd}`;
+        document.getElementById('dash-exp').innerText = `Rs ${tExp}`;
+        document.getElementById('dash-total').innerText = `Rs ${tTotal}`;
+
+        // Wheels RGB
+        const dailyProg = Math.min(Math.round((tTotal / db.dailyTarget) * 100), 100);
+        document.getElementById('goal-percent').innerText = dailyProg + "%";
+        document.getElementById('wheel-border').className = `wheel-container ${dailyProg >= 100 ? 'rgb-active' : ''}`;
+
+        const mSales = db.sales.reduce((a,b)=>a+b.price, 0), mExp = db.expenses.reduce((a,b)=>a+b.amt, 0);
+        const monthProg = Math.min(Math.round((mSales / db.monthlyTarget) * 100), 100);
+        document.getElementById('monthly-goal-percent').innerText = monthProg + "%";
+        document.getElementById('monthly-wheel-border').className = `wheel-container ${monthProg >= 100 ? 'rgb-active' : ''}`;
+        
+        document.getElementById('rec-total-sales').innerText = `Rs ${mSales}`;
+        document.getElementById('rec-total-exp').innerText = `Rs ${mExp}`;
+        document.getElementById('rec-total-profit').innerText = `Rs ${mSales - mExp}`;
+
+        // List Refreshing
+        const bBonus = document.getElementById('barber-bonus-status'), bSel = document.getElementById('sale-barber'), sSel = document.getElementById('sale-service');
+        const hRows = document.getElementById('full-history-rows'), bSalCards = document.getElementById('barber-salary-cards');
+        const bSet = document.getElementById('set-barber-list'), sSet = document.getElementById('service-list'), pSet = document.getElementById('product-list'), bExpSel = document.getElementById('barber-exp-name');
+
+        [bBonus, bSel, sSel, hRows, bSalCards, bSet, sSet, pSet, bExpSel].forEach(el => el.innerHTML = '');
+
+        db.services.forEach(s => { if(selectedMethod !== 'Product') sSel.innerHTML += `<option value="${s.price}">${s.name} (Rs ${s.price})</option>`; sSet.innerHTML += `<div class="p-2 bg-slate-800 rounded text-xs flex justify-between"><span>${s.name}</span><span>Rs ${s.price}</span></div>`; });
+        db.products.forEach(p => { if(selectedMethod === 'Product') sSel.innerHTML += `<option value="${p.price}">${p.name} (Rs ${p.price})</option>`; pSet.innerHTML += `<div class="p-2 bg-slate-800 rounded text-xs flex justify-between items-center"><span>${p.name}</span><button onclick="removeProduct('${p.name}')" class="text-red-500">X</button></div>`; });
+
+        db.barbers.forEach(b => {
+            const bTotal = db.sales.filter(s => s.barber === b).reduce((a,b) => a+b.price, 0);
+            let bAmt = 0; if(bTotal >= 150000) bAmt = 7400; else if(bTotal >= 40000) bAmt = 2400; else if(bTotal >= 6000) bAmt = 400;
+            
+            bBonus.innerHTML += `<div class="glass-card p-6 rounded-3xl flex justify-between items-center ${bAmt >= 7400 ? 'rgb-active' : 'border-l-4 border-slate-700'}">
+                <div><p class="font-bold text-xs uppercase">${b}</p><p class="text-[8px] text-slate-400">Total Sales: Rs ${bTotal}</p></div>
+                <div class="text-right"><p class="text-[9px] text-slate-400">Total Bonus</p><p class="text-lg font-black text-emerald-400">Rs ${bAmt}</p></div>
+            </div>`;
+
+            const adv = db.barberFinances[b]?.internalExp.reduce((a,c)=>a+c.amt, 0) || 0;
+            bSalCards.innerHTML += `<div class="glass-card p-6 rounded-3xl border-l-4 border-cyan-400">
+                <p class="font-black text-sm mb-2 uppercase">${b}</p>
+                <div class="space-y-1 text-[9px] font-bold uppercase">
+                    <div class="flex justify-between"><span>Base Salary</span><span>Rs ${db.barberFinances[b].salary}</span></div>
+                    <div class="flex justify-between text-emerald-400"><span>Bonus</span><span>+ Rs ${bAmt}</span></div>
+                    <div class="flex justify-between text-red-400"><span>Advance</span><span>- Rs ${adv}</span></div>
+                    <div class="pt-2 mt-2 border-t border-slate-700 flex justify-between text-xs text-cyan-400"><span>Net Pay</span><span>Rs ${db.barberFinances[b].salary + bAmt - adv}</span></div>
+                </div>
+            </div>`;
+            bSel.innerHTML += `<option value="${b}">${b}</option>`; bExpSel.innerHTML += `<option value="${b}">${b}</option>`;
+            bSet.innerHTML += `<div class="p-2 bg-slate-800 rounded text-[9px] flex justify-between"><span>${b}</span><button onclick="removeBarber('${b}')" class="text-red-500 font-bold">X</button></div>`;
+        });
+
+        // Combined History
+        let hist = [...db.sales.map(s=>({...s, t: 'SALE'})), ...db.expenses.map(e=>({...e, t: 'EXP', barber: 'SHOP', service: e.desc, price: e.amt}))].sort((a,b)=>new Date(b.date+' '+b.ts)-new Date(a.date+' '+a.ts));
+        hist.forEach(i => {
+            const isE = i.t === 'EXP';
+            hRows.innerHTML += `<div class="p-3 grid grid-cols-4 text-[9px] font-bold uppercase">
+                <span class="text-slate-500">${i.date}</span>
+                <span class="text-white">${i.barber} <span class="text-[7px] ${isE ? 'text-red-400' : 'text-cyan-400'}">(${isE ? 'EXP' : i.method})</span></span>
+                <span class="truncate pr-2">${i.service}</span>
+                <span class="text-right ${isE ? 'text-red-400' : 'text-emerald-400'}">Rs ${i.price}</span>
+            </div>`;
+        });
+    }
+
+    function closeBusinessDay() { if(confirm("End current session?")) { db.currentBusinessDay = new Date().toLocaleDateString(); save(); } }
+    function downloadExcelReport() { let csv = "Date,Barber,Item,Method,Price\n"; db.sales.forEach(s=>csv+=`${s.date},${s.barber},${s.service},${s.method},${s.price}\n`); const blob = new Blob([csv], {type:'text/csv'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`MHS_ENT_REPORT.csv`; a.click(); }
+    window.onload = refreshUI;
+</script>
+</body>
+</html>
