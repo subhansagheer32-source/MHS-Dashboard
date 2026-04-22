@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mhs-v12-cache';
+const CACHE_NAME = 'mhs-v13-wallet';
 // List the files you want to work offline
 const assets = [
   './',
