@@ -4,7 +4,7 @@ const assets = [
   './',
   'index.html',
   'manifest.json',
-  'logo.png'
+  'logo.png.png'
 ];
 
 // Install the service worker and cache the files
